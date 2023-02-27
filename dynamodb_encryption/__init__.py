@@ -42,7 +42,7 @@ def encrypt(table_info: TableInfo,
 
     del data_key, key_bytes, pointer, config
 
-    return response
+    return Parser.to_number(response)
 
 
 def decrypt(table_info: TableInfo,
