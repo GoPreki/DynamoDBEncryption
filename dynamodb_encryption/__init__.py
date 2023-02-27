@@ -54,9 +54,10 @@ def decrypt(table_info: TableInfo,
     if not pointer:
         raise Exception('Pointer not found')
 
-    pointer_bytes = kms_client.decrypt(CiphertextBlob=pointer.value,
-                                       KeyId=key_id,
-                                       EncryptionAlgorithm='SYMMETRIC_DEFAULT')['Plaintext']
+    pointer_bytes = kms_client.decrypt(
+        CiphertextBlob=pointer.value,
+        KeyId=key_id,
+        EncryptionAlgorithm='SYMMETRIC_DEFAULT')['Plaintext']
 
     config = _get_config(table_info=table_info,
                          key_bytes=pointer_bytes,
@@ -85,28 +86,35 @@ def _get_config(table_info: TableInfo,
     )
     sign = JceNameLocalDelegatedKey(
         key=key_bytes,
-        algorithm="HmacSHA512" if type == EncryptionKeyType.SYMMETRIC else 'SHA512withRSA',
+        algorithm="HmacSHA512"
+        if type == EncryptionKeyType.SYMMETRIC else 'SHA512withRSA',
         key_type=type,
         key_encoding=encoding,
     )
 
-    wrapped_cmp = WrappedCryptographicMaterialsProvider(wrapping_key=wrap, unwrapping_key=wrap, signing_key=sign)
+    wrapped_cmp = WrappedCryptographicMaterialsProvider(wrapping_key=wrap,
+                                                        unwrapping_key=wrap,
+                                                        signing_key=sign)
 
     context = EncryptionContext(
         table_name=table_info.name,
         partition_key_name=table_info.primary_index.partition,
         sort_key_name=table_info.primary_index.sort,
-        attributes=dict_to_ddb(context_attributes) if context_attributes else None,
+        attributes=dict_to_ddb(context_attributes)
+        if context_attributes else None,
     )
 
     _dont_encrypt = ['pointer', *(dont_encrypt if dont_encrypt else [])]
     actions = AttributeActions(
         default_action=CryptoAction.ENCRYPT_AND_SIGN,
-        attribute_actions={k: CryptoAction.DO_NOTHING for k in _dont_encrypt},
+        attribute_actions={k: CryptoAction.DO_NOTHING
+                           for k in _dont_encrypt},
     )
     actions.set_index_keys(*table_info.protected_index_keys())
 
-    config = CryptoConfig(materials_provider=wrapped_cmp, encryption_context=context, attribute_actions=actions)
+    config = CryptoConfig(materials_provider=wrapped_cmp,
+                          encryption_context=context,
+                          attribute_actions=actions)
 
     del wrap, sign, wrapped_cmp, context, actions
 
