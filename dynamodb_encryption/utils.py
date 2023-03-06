@@ -1,6 +1,5 @@
 import json
 from decimal import Decimal
-from boto3.dynamodb.types import Binary
 
 
 class DecimalEncoder(json.JSONEncoder):
@@ -8,8 +7,6 @@ class DecimalEncoder(json.JSONEncoder):
     def default(self, o):
         if isinstance(o, Decimal):
             return float(o) if o % 1 != 0 else int(o)
-        if isinstance(o, Binary):
-            return str(o.value)
         return super(DecimalEncoder, self).default(o)
 
 
